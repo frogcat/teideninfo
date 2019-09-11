@@ -1,0 +1,29 @@
+{
+  "name": "teideninfo",
+  "version": "1.0.0",
+  "description": "scraping script & map viz for teideninfo",
+  "main": "main.js",
+  "directories": {
+    "doc": "docs"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "data": "node main.js 12000000000.html > docs/data.json",
+    "geom": "bash geom.sh 12 > docs/geom.json"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/frogcat/teideninfo.git"
+  },
+  "author": "frogcat",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/frogcat/teideninfo/issues"
+  },
+  "homepage": "https://github.com/frogcat/teideninfo#readme",
+  "dependencies": {
+    "iconv-lite": "^0.5.0",
+    "node-fetch": "^2.6.0",
+    "wellknown": "^0.5.0"
+  }
+}
