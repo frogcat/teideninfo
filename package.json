@@ -8,7 +8,7 @@
   },
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "data": "node main.js 12000000000.html > docs/data.json",
+    "data": "bash data.sh 12",
     "geom": "bash geom.sh 12 > docs/geom.json"
   },
   "repository": {

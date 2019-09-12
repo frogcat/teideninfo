@@ -71,7 +71,7 @@
           layer.bindTooltip(feature.properties.label);
         }
       });
-      L.map("map", {
+      const map = L.map("map", {
         layers: [
           L.tileLayer("https://cyberjapandata.gsi.go.jp/xyz/pale/{z}/{x}/{y}.png", {
             attribution: "<a href='http://maps.gsi.go.jp/development/ichiran.html'>地理院タイル</a>"
@@ -80,6 +80,10 @@
         ],
         preferCanvas: true
       }).fitBounds(layer.getBounds());
+
+      map.attributionControl.addAttribution("<a href='http://data.e-stat.go.jp/lodw/'>e-Stat 統計LOD(小地域ポリゴン+世帯数)</a>");
+      map.attributionControl.addAttribution("<a href='http://teideninfo.tepco.co.jp/'>東京電力パワーグリッド株式会社(停電情報)</a>");
+
     });
   </script>
 </body>
