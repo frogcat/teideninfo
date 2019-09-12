@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <meta charset="UTF-8">
+  <title>teideninfo</title>
+  <meta name="viewport" content="initial-scale=1.0, maximum-scale=1.0" />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.5.1/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet@1.5.1/dist/leaflet.js"></script>
+</head>
+
+<body>
+  <div id="map" style="position:absolute;top:0;left:0;bottom:0;right:0;">Now loading</div>
+  <script>
+    Promise.all([
+      fetch("data.json").then(a => a.json()),
+      fetch("geom.json").then(a => a.json())
+    ]).then(a => {
+
+      const data = a[0];
+      const geojson = a[1];
+
+      const features = [];
+
+      const fm = {};
+      data.forEach(x => {
+        const key = x[0].substring(0, 5) + x[3];
+        const feature = geojson.features.find(x => x.id === key);
+        if (feature) {
+          feature.properties.ken = x[4];
+          feature.properties.label = x.slice(1).join(":") + " (" + feature.properties.households + "世帯)";
+          features.push(feature);
+        } else {
+          console.log("geometry not found", key, x);
+        }
+      });
+
+      if (features.length === 0) {
+        alert("No features.")
+        return;
+      }
+
+      const layer = L.geoJSON({
+        type: "FeatureCollection",
+        features: features
+      }, {
+        onEachFeature: function(feature, layer) {
+          let ken = parseInt(feature.properties.ken.replace(/[^0-9]/g, ""));
+          if (feature.properties.ken === "100軒未満") ken = 50;
+
+          let hh = feature.properties.households;
+
+          const style = {
+            color: "#888",
+            fillColor: "#000",
+            weight: 1,
+            fillOpacity: 0.8
+          };
+
+          if (hh !== undefined) {
+            let v = Math.max(Math.min(1, ken / hh), 0);
+            let hue = 180 * (1 - v);
+            style.fillColor = "hsl(" + hue + ",100%,50%)";
+          }
+
+          //          if (hh === undefined) {}
+
+          //          let hue = 200 - (ken / 10);
+          //          if (hue < 0) hue = 0;
+          layer.setStyle(style);
+          layer.bindTooltip(feature.properties.label);
+        }
+      });
+      L.map("map", {
+        layers: [
+          L.tileLayer("https://cyberjapandata.gsi.go.jp/xyz/pale/{z}/{x}/{y}.png", {
+            attribution: "<a href='http://maps.gsi.go.jp/development/ichiran.html'>地理院タイル</a>"
+          }),
+          layer
+        ],
+        preferCanvas: true
+      }).fitBounds(layer.getBounds());
+    });
+  </script>
+</body>
+
+</html>

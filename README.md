@@ -17,3 +17,4 @@ $ npm run data
 # map
 
 - <https://frogcat.github.io/teideninfo/>
+- <https://frogcat.github.io/teideninfo/ratio.html>
