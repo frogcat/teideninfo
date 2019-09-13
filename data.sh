@@ -8,6 +8,6 @@ html=${code}000000000.html
 echo $now
 
 node main.js ${html} > docs/data.${now}.json
-cp docs/data.${now}.json docs/data.json
+# cp docs/data.${now}.json docs/data.json
 
-find . -name 'data.*.json' | sed -ne 's#./docs/##p' > docs/data.txt
+find . -name 'data.*.json' | sed -ne 's#./docs/##p' | sort > docs/data.txt
