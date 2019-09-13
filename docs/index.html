@@ -7,73 +7,106 @@
   <meta name="viewport" content="initial-scale=1.0, maximum-scale=1.0" />
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.5.1/dist/leaflet.css" />
   <script src="https://unpkg.com/leaflet@1.5.1/dist/leaflet.js"></script>
+  <script src="https://code.jquery.com/jquery-3.4.1.min.js"></script>
 </head>
 
 <body>
   <div id="map" style="position:absolute;top:0;left:0;bottom:0;right:0;">Now loading</div>
+  <div id="ctrl" style="position:absolute;top:5px;right:5px;width:auto;height:auto;background:rgba(0,0,0,0.8);padding:10px;z-index:2000;color:white;">
+    <label for="file">時点</label> <select id="file">
+    </select><br />
+    <label for="mode">表示</label> <select id="mode">
+      <option value="1">停電軒数</option>
+      <option value="2">停電軒数 / 世帯数</option>
+    </select>
+  </div>
   <script>
-    Promise.all([
-      fetch("data.json").then(a => a.json()),
-      fetch("geom.json").then(a => a.json())
-    ]).then(a => {
-
-      const data = a[0];
-      const geojson = a[1];
-
-      const features = [];
-
-      const fm = {};
-      data.forEach(x => {
-        const key = x[0].substring(0, 5) + x[3];
-        const feature = geojson.features.find(x => x.id === key);
-        if (feature) {
-          feature.properties = {
-            ken: x[4],
-            label: x.slice(1).join(":")
-          };
-          features.push(feature);
-        } else {
-          console.log("geometry not found", key, x);
-        }
-      });
-
-      if (features.length === 0) {
-        alert("No features.")
-        return;
-      }
-
-      const layer = L.geoJSON({
-        type: "FeatureCollection",
-        features: features
-      }, {
-        onEachFeature: function(feature, layer) {
-          let ken = parseInt(feature.properties.ken.replace(/[^0-9]/g, ""));
-          if (feature.properties.ken === "100軒未満") ken = 0;
-
-          let hue = 200 - (ken / 10);
-          if (hue < 0) hue = 0;
-          const style = {
-            color: "#888",
-            fillColor: "hsl(" + hue + ",100%,50%)",
-            weight: 1,
-            fillOpacity: 0.8
-          };
-          layer.setStyle(style);
-          layer.bindTooltip(feature.properties.label);
-        }
-      });
+    fetch("geom.json").then(a => a.json()).then(geojson => {
+      let layer = null;
       const map = L.map("map", {
         layers: [
           L.tileLayer("https://cyberjapandata.gsi.go.jp/xyz/pale/{z}/{x}/{y}.png", {
             attribution: "<a href='http://maps.gsi.go.jp/development/ichiran.html'>地理院タイル</a>"
-          }),
-          layer
+          })
         ],
         preferCanvas: true
-      }).fitBounds(layer.getBounds());
+      }).fitBounds(L.geoJSON(geojson).getBounds());
 
       map.attributionControl.addAttribution("<a href='http://data.e-stat.go.jp/lodw/'>e-Stat 統計LOD(小地域ポリゴン+世帯数)</a>");
       map.attributionControl.addAttribution("<a href='http://teideninfo.tepco.co.jp/'>東京電力パワーグリッド株式会社(停電情報)</a>");
+
+      fetch("data.txt").then(a => a.text()).then(text => {
+        text.split("\n").map(a => a.trim()).filter(a => a.match(/json$/)).forEach(a => {
+          const label = [a.substring(5, 9), a.substring(9, 11), a.substring(11, 13)].join("/") + " " + [a.substring(13, 15), a.substring(15, 17)].join(":");
+          $("#file").append($("<option/>", {
+            value: a
+          }).text(label)).val(a);
+        });
+
+        const update = function() {
+          if (layer !== null) map.removeLayer(layer);
+          const file = $("#file").val();
+          const mode = $("#mode").val();
+          fetch(file).then(a => a.json()).then(data => {
+
+            const keyval = {};
+            data.forEach(x => {
+              const key = x[0].substring(0, 5) + x[3];
+              keyval[key] = x;
+            });
+
+            layer = L.geoJSON(geojson, {
+              filter: function(feature) {
+                return keyval[feature.id] !== undefined;
+              },
+              onEachFeature: function(feature, layer) {
+                const val = keyval[feature.id];
+                const hh = feature.properties.households;
+                const label = val.slice(1).join(":") + " (" + hh + "世帯)";
+                layer.bindTooltip(label);
+
+                let ken = parseInt(val[4].replace(/[^0-9]/g, ""));
+                if (val[4] === "100軒未満") ken = 0;
+
+                if (mode === "1") {
+                  let hue = 200 - (ken / 10);
+                  if (hue < 0) hue = 0;
+                  const style = {
+                    color: "#888",
+                    fillColor: "hsl(" + hue + ",100%,50%)",
+                    weight: 1,
+                    fillOpacity: 0.8
+                  };
+                  layer.setStyle(style);
+                } else {
+                  if (ken === 0) ken = 50;
+
+                  const style = {
+                    color: "#888",
+                    fillColor: "#000",
+                    weight: 1,
+                    fillOpacity: 0.8
+                  };
+
+                  if (hh !== undefined) {
+                    let v = Math.max(Math.min(1, ken / hh), 0);
+                    let hue = 180 * (1 - v);
+                    style.fillColor = "hsl(" + hue + ",100%,50%)";
+                  }
+                  layer.setStyle(style);
+                }
+              }
+            }).addTo(map);
+
+          });
+        };
+
+        $("#mode").change(update);
+        $("#file").change(update);
+        update();
+
+      });
+
     });
   </script>
 </body>
