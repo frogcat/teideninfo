@@ -24,16 +24,26 @@
     fetch("geom.json").then(a => a.json()).then(geojson => {
       let layer = null;
       const map = L.map("map", {
-        layers: [
-          L.tileLayer("https://cyberjapandata.gsi.go.jp/xyz/pale/{z}/{x}/{y}.png", {
-            attribution: "<a href='http://maps.gsi.go.jp/development/ichiran.html'>地理院タイル</a>"
-          })
-        ],
         preferCanvas: true
       }).fitBounds(L.geoJSON(geojson).getBounds());
 
+      map.zoomControl.setPosition("bottomright");
       map.attributionControl.addAttribution("<a href='http://data.e-stat.go.jp/lodw/'>e-Stat 統計LOD(小地域ポリゴン+世帯数)</a>");
       map.attributionControl.addAttribution("<a href='http://teideninfo.tepco.co.jp/'>東京電力パワーグリッド株式会社(停電情報)</a>");
+
+      L.control.layers({
+        "淡色地図(地理院タイル)": L.tileLayer("https://cyberjapandata.gsi.go.jp/xyz/pale/{z}/{x}/{y}.png", {
+          attribution: "<a href='http://maps.gsi.go.jp/development/ichiran.html'>地理院タイル</a>"
+        }).addTo(map),
+        "写真(地理院タイル)": L.tileLayer("https://cyberjapandata.gsi.go.jp/xyz/seamlessphoto/{z}/{x}/{y}.jpg", {
+          attribution: "<a href='http://maps.gsi.go.jp/development/ichiran.html'>地理院タイル</a>"
+        }),
+        "OpenStreetMap": L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+          attribution: "&copy; <a href='http://osm.org/copyright'>OpenStreetMap</a> contributors"
+        })
+      }, {}, {
+        position: "topleft"
+      }).addTo(map);
 
       fetch("data.txt").then(a => a.text()).then(text => {
         text.split("\n").map(a => a.trim()).filter(a => a.match(/json$/)).forEach(a => {
@@ -75,7 +85,7 @@
                     color: "#888",
                     fillColor: "hsl(" + hue + ",100%,50%)",
                     weight: 1,
-                    fillOpacity: 0.8
+                    fillOpacity: 0.6
                   };
                   layer.setStyle(style);
                 } else {
