@@ -24,7 +24,7 @@
   "dependencies": {
     "@turf/simplify": "^5.1.5",
     "iconv-lite": "^0.5.0",
-    "node-fetch": "^2.6.0",
+    "node-fetch": "^2.6.1",
     "wellknown": "^0.5.0"
   }
 }
